@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+
+<section>
+  <h2>Small daily habits for PCOS, one day at a time.</h2>
+
+  <% if (!currentUser) { %>
+    <p>This app helps you track sleep, movement, mood and cravings, and explore PCOS-friendly recipes.</p>
+    <p>
+      <a class="btn" href="/register">Create an account</a>
+      <a class="btn-secondary" href="/login">Log in</a>
+    </p>
+  <% } else { %>
+    <p>Welcome back, <strong><%= currentUser.display_name %></strong>. Here are your last 7 check-ins:</p>
+
+    <% if (logs.length === 0) { %>
+      <p>No check-ins yet. <a href="/daily-check-in">Log today</a>.</p>
+    <% } else { %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Sleep (hrs)</th>
+            <th>Movement (mins)</th>
+            <th>Mood</th>
+            <th>Energy</th>
+            <th>Cravings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(log => { %>
+            <tr>
+              <td><%= log.log_date.toISOString().slice(0,10) %></td>
+              <td><%= log.sleep_hours ?? '-' %></td>
+              <td><%= log.movement_minutes ?? '-' %></td>
+              <td><%= log.mood_score ?? '-' %></td>
+              <td><%= log.energy_score ?? '-' %></td>
+              <td><%= log.craving_level ?? '-' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+
+    <p><a class="btn" href="/daily-check-in">Add / update today&apos;s check-in</a></p>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>
