@@ -1,0 +1,6 @@
+home=http://localhost:8000/
+about=http://localhost:8000/about
+register=http://localhost:8000/register
+login=http://localhost:8000/login
+daily_check_in=http://localhost:8000/daily-check-in
+recipes=http://localhost:8000/recipes
