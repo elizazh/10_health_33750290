@@ -1,0 +1,34 @@
+<%- include('partials/header') %>
+
+<section class="form-section">
+  <h2>Create an account</h2>
+
+  <% if (error) { %>
+    <p class="error"><%= error %></p>
+  <% } %>
+
+  <form method="POST" action="/register">
+    <label>
+      Username
+      <input type="text" name="username" required />
+    </label>
+
+    <label>
+      Display name
+      <input type="text" name="display_name" required />
+    </label>
+
+    <label>
+      Password
+      <input type="password" name="password" required />
+    </label>
+
+    <p class="hint">
+      Password must be at least 8 characters and include lowercase, uppercase, a digit and a special character.
+    </p>
+
+    <button type="submit" class="btn">Register</button>
+  </form>
+</section>
+
+<%- include('partials/footer') %>
