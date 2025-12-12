@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PCOS Lifestyle Coach</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <h1><a href="/">PCOS Lifestyle Coach</a></h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/recipes">Recipes</a>
+
+        <% if (currentUser) { %>
+          <a href="/daily-check-in">Daily Check-In</a>
+          <span class="nav-user">Hi, <%= currentUser.display_name %></span>
+          <a href="/logout">Logout</a>
+        <% } else { %>
+          <a href="/register">Register</a>
+          <a href="/login">Login</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
