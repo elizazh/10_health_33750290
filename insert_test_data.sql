@@ -30,3 +30,5 @@ VALUES
   '1. Fry onions, garlic and spices.\n2. Add 200g chicken and tomato puree.\n3. Simmer.\n4. Stir in spinach and serve.',
   'medium', 40, TRUE, 'comfort_food'
 );
+
+
