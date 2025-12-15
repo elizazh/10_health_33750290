@@ -1,4 +1,3 @@
-const BASE_PATH = "/usr/147";
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
@@ -9,14 +8,17 @@ const db = require("./db");
 
 const app = express();
 const PORT = 8000;
+const BASE_PATH = "/usr/147";
 
-// View engine
+/* ---------------- VIEW ENGINE ---------------- */
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Middleware
+/* ---------------- MIDDLEWARE ---------------- */
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+
+// STATIC FILES MUST BE UNDER BASE PATH
+app.use(BASE_PATH, express.static(path.join(__dirname, "public")));
 
 app.use(
   session({
@@ -26,14 +28,17 @@ app.use(
   })
 );
 
-// Make user available in templates
+// MAKE BASE PATH + USER AVAILABLE TO ALL VIEWS
 app.use((req, res, next) => {
+  res.locals.basePath = BASE_PATH;
   res.locals.currentUser = req.session.user || null;
   next();
 });
 
-// Home
-app.get("/", async (req, res) => {
+/* ---------------- ROUTES ---------------- */
+
+// HOME
+app.get(`${BASE_PATH}/`, async (req, res) => {
   if (!req.session.user) {
     return res.render("index", { logs: [] });
   }
@@ -50,17 +55,17 @@ app.get("/", async (req, res) => {
   }
 });
 
-// About
-app.get("/about", (req, res) => {
+// ABOUT
+app.get(`${BASE_PATH}/about`, (req, res) => {
   res.render("about");
 });
 
-// Register
-app.get("/register", (req, res) => {
+// REGISTER
+app.get(`${BASE_PATH}/register`, (req, res) => {
   res.render("register", { error: null });
 });
 
-app.post("/register", async (req, res) => {
+app.post(`${BASE_PATH}/register`, async (req, res) => {
   const { username, display_name, password } = req.body;
 
   if (!username || !display_name || !password) {
@@ -89,19 +94,19 @@ app.post("/register", async (req, res) => {
       display_name,
     };
 
-    res.redirect("/");
+    res.redirect(`${BASE_PATH}/`);
   } catch (err) {
     console.error(err);
     res.render("register", { error: "Registration failed." });
   }
 });
 
-// Login
-app.get("/login", (req, res) => {
+// LOGIN
+app.get(`${BASE_PATH}/login`, (req, res) => {
   res.render("login", { error: null });
 });
 
-app.post("/login", async (req, res) => {
+app.post(`${BASE_PATH}/login`, async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -127,20 +132,20 @@ app.post("/login", async (req, res) => {
       display_name: user.display_name,
     };
 
-    res.redirect("/");
+    res.redirect(`${BASE_PATH}/`);
   } catch (err) {
     console.error(err);
     res.render("login", { error: "Login failed." });
   }
 });
 
-// Logout
-app.get("/logout", (req, res) => {
-  req.session.destroy(() => res.redirect("/"));
+// LOGOUT
+app.get(`${BASE_PATH}/logout`, (req, res) => {
+  req.session.destroy(() => res.redirect(`${BASE_PATH}/`));
 });
 
-// Recipes
-app.get("/recipes", async (req, res) => {
+// RECIPES
+app.get(`${BASE_PATH}/recipes`, async (req, res) => {
   const search = req.query.q || "";
 
   try {
@@ -162,8 +167,8 @@ app.get("/recipes", async (req, res) => {
   }
 });
 
-// Start server (THIS IS WHAT APACHE NEEDS)
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+/* ---------------- START SERVER ---------------- */
+// IMPORTANT: bind to IPv4 so Apache can connect
+app.listen(PORT, "127.0.0.1", () => {
+  console.log(`Server running at http://127.0.0.1:${PORT}${BASE_PATH}`);
 });
-
