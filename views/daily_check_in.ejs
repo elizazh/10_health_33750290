@@ -2,7 +2,7 @@
 
 <section class="form-section">
   <h2>Daily PCOS Check-In</h2>
-  <p>Log how you&apos;re doing today. Over time you can see patterns between sleep, movement, cravings and how you feel.</p>
+  <p>Log how you’re doing today. Over time you can see patterns between sleep, movement, mood and cravings.</p>
 
   <% if (error) { %>
     <p class="error"><%= error %></p>
@@ -12,7 +12,7 @@
     <p class="success"><%= success %></p>
   <% } %>
 
-  <form method="POST" action="/daily-check-in">
+  <form method="POST" action="<%= basePath %>/daily-check-in">
     <label>
       Date
       <input type="date" name="log_date" required />
@@ -58,3 +58,4 @@
 </section>
 
 <%- include('partials/footer') %>
+
