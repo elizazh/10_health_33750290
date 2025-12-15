@@ -7,7 +7,7 @@
     <p class="error"><%= error %></p>
   <% } %>
 
-  <form method="POST" action="/login">
+  <form method="POST" action="<%= basePath %>/login">
     <label>
       Username
       <input type="text" name="username" required />
