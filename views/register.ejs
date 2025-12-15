@@ -7,7 +7,7 @@
     <p class="error"><%= error %></p>
   <% } %>
 
-  <form method="POST" action="/register">
+  <form method="POST" action="<%= basePath %>/register">
     <label>
       Username
       <input type="text" name="username" required />
@@ -24,7 +24,7 @@
     </label>
 
     <p class="hint">
-      Password must be at least 8 characters and include lowercase, uppercase, a digit and a special character.
+      Password must be at least 8 characters.
     </p>
 
     <button type="submit" class="btn">Register</button>
