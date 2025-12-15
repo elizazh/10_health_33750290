@@ -1,7 +1,7 @@
-home=https://www.doc.gold.ac.uk/usr/147/
-about=https://www.doc.gold.ac.uk/usr/147/about
-register=https://www.doc.gold.ac.uk/usr/147/register
-login=https://www.doc.gold.ac.uk/usr/147/login
-daily_check_in=https://www.doc.gold.ac.uk/usr/147/daily-check-in
-recipes=https://www.doc.gold.ac.uk/usr/147/recipes
-stats=https://www.doc.gold.ac.uk/usr/147/stats
+home=https://www.doc.gold.ac.uk/usr/417/
+about=https://www.doc.gold.ac.uk/usr/417/about
+register=https://www.doc.gold.ac.uk/usr/417/register
+login=https://www.doc.gold.ac.uk/usr/417/login
+daily_check_in=https://www.doc.gold.ac.uk/usr/417/daily-check-in
+recipes=https://www.doc.gold.ac.uk/usr/417/recipes
+stats=https://www.doc.gold.ac.uk/usr/417/stats
