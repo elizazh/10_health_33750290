@@ -6,14 +6,14 @@
   <% if (!currentUser) { %>
     <p>This app helps you track sleep, movement, mood and cravings, and explore PCOS-friendly recipes.</p>
     <p>
-      <a class="btn" href="/register">Create an account</a>
-      <a class="btn-secondary" href="/login">Log in</a>
+      <a class="btn" href="<%= basePath %>/register">Create an account</a>
+      <a class="btn-secondary" href="<%= basePath %>/login">Log in</a>
     </p>
   <% } else { %>
-    <p>Welcome back, <strong><%= currentUser.display_name %></strong>. Here are your last 7 check-ins:</p>
+    <p>Welcome back, <strong><%= currentUser.display_name %></strong>. Here are your last 7 check-ins.</p>
 
     <% if (logs.length === 0) { %>
-      <p>No check-ins yet. <a href="/daily-check-in">Log today</a>.</p>
+      <p>No check-ins yet. <a href="<%= basePath %>/daily-check-in">Log today</a>.</p>
     <% } else { %>
       <table class="data-table">
         <thead>
@@ -29,7 +29,7 @@
         <tbody>
           <% logs.forEach(log => { %>
             <tr>
-              <td><%= log.log_date.toISOString().slice(0,10) %></td>
+              <td><%= new Date(log.log_date).toISOString().slice(0,10) %></td>
               <td><%= log.sleep_hours ?? '-' %></td>
               <td><%= log.movement_minutes ?? '-' %></td>
               <td><%= log.mood_score ?? '-' %></td>
@@ -41,7 +41,9 @@
       </table>
     <% } %>
 
-    <p><a class="btn" href="/daily-check-in">Add / update today&apos;s check-in</a></p>
+    <p>
+      <a class="btn" href="<%= basePath %>/daily-check-in">Add / update today’s check-in</a>
+    </p>
   <% } %>
 </section>
 
