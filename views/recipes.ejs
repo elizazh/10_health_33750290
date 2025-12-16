@@ -1,43 +1,74 @@
 <%- include('partials/header') %>
 
+<%
+  // Make template robust even if controller forgets to pass vars
+  const safeBasePath =
+    (typeof basePath !== "undefined" && basePath) ? basePath.replace(/\/$/, "") : "";
+
+  const safeSearch =
+    (typeof search !== "undefined" && search) ? String(search) : "";
+
+  const safeRecipes =
+    (typeof recipes !== "undefined" && Array.isArray(recipes)) ? recipes : [];
+%>
+
 <section>
   <h2>PCOS-Friendly Recipes</h2>
 
-  <form method="GET" action="<%= basePath %>/recipes" class="search-form">
+  <form method="GET" action="<%= safeBasePath %>/recipes" class="search-form">
     <label>
       Search recipes
       <input
         type="text"
         name="q"
-        value="<%= search %>"
+        value="<%= safeSearch %>"
         placeholder="e.g. salmon, breakfast, comfort"
       />
     </label>
+
     <button type="submit" class="btn">Search</button>
 
-    <% if (search) { %>
-      <a class="btn-secondary" href="<%= basePath %>/recipes">Clear</a>
+    <% if (safeSearch) { %>
+      <a class="btn-secondary" href="<%= safeBasePath %>/recipes">Clear</a>
     <% } %>
   </form>
 
-  <% if (recipes.length === 0) { %>
+  <% if (!safeRecipes || safeRecipes.length === 0) { %>
     <p>No recipes found.</p>
   <% } else { %>
     <ul class="card-list">
-      <% recipes.forEach(r => { %>
+      <% safeRecipes.forEach(r => { %>
         <li class="card">
-          <h3><%= r.title %></h3>
+          <h3><%= r && r.title ? r.title : "Untitled recipe" %></h3>
 
-          <% if (r.main_tag) { %>
+          <% if (r && r.main_tag) { %>
             <p class="tag"><%= r.main_tag %></p>
           <% } %>
 
-          <p><%= r.summary %></p>
+          <% if (r && r.summary) { %>
+            <p><%= r.summary %></p>
+          <% } else { %>
+            <p>No summary available.</p>
+          <% } %>
 
-          <p class="meta">
-            Prep: <%= r.prep_time_minutes %> mins &middot;
-            Difficulty: <%= r.difficulty %>
-          </p>
+          <% const hasPrep = r && r.prep_time_minutes; %>
+          <% const hasDiff = r && r.difficulty; %>
+
+          <% if (hasPrep || hasDiff) { %>
+            <p class="meta">
+              <% if (hasPrep) { %>
+                Prep: <%= r.prep_time_minutes %> mins
+              <% } %>
+
+              <% if (hasPrep && hasDiff) { %>
+                &middot;
+              <% } %>
+
+              <% if (hasDiff) { %>
+                Difficulty: <%= r.difficulty %>
+              <% } %>
+            </p>
+          <% } %>
         </li>
       <% }) %>
     </ul>
