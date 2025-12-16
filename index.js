@@ -1,4 +1,7 @@
-const BASE_PATH = "/usr/417";
+cd ~/10_health_33750790
+
+cat > index.js <<'EOF'
+const BASE_PATH = process.env.BASE_PATH || "/usr/417";
 
 const express = require("express");
 const session = require("express-session");
@@ -9,7 +12,7 @@ require("dotenv").config();
 const db = require("./db");
 
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 // View engine
 app.set("view engine", "ejs");
@@ -18,7 +21,7 @@ app.set("views", path.join(__dirname, "views"));
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 
-// static files under base path
+// Static files must be served under the base path
 app.use(BASE_PATH, express.static(path.join(__dirname, "public")));
 
 app.use(
@@ -42,16 +45,21 @@ app.use((req, res, next) => {
 
 // Home
 app.get(`${BASE_PATH}/`, async (req, res) => {
-  if (!req.session.user) {
-    return res.render("index", { logs: [] });
+  try {
+    if (!req.session.user) {
+      return res.render("index", { logs: [] });
+    }
+
+    const [logs] = await db.query(
+      "SELECT * FROM daily_logs WHERE user_id = ? ORDER BY log_date DESC LIMIT 7",
+      [req.session.user.user_id]
+    );
+
+    res.render("index", { logs });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
   }
-
-  const [logs] = await db.query(
-    "SELECT * FROM daily_logs WHERE user_id = ? ORDER BY log_date DESC LIMIT 7",
-    [req.session.user.user_id]
-  );
-
-  res.render("index", { logs });
 });
 
 // About
@@ -65,35 +73,40 @@ app.get(`${BASE_PATH}/register`, (req, res) => {
 });
 
 app.post(`${BASE_PATH}/register`, async (req, res) => {
-  const { username, display_name, password } = req.body;
+  try {
+    const { username, display_name, password } = req.body;
 
-  if (!username || !display_name || !password) {
-    return res.render("register", { error: "All fields required." });
+    if (!username || !display_name || !password) {
+      return res.render("register", { error: "All fields required." });
+    }
+
+    const [existing] = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+
+    if (existing.length) {
+      return res.render("register", { error: "Username already taken." });
+    }
+
+    const hash = await bcrypt.hash(password, 12);
+
+    const [result] = await db.query(
+      "INSERT INTO users (username, password_hash, display_name, created_at) VALUES (?, ?, ?, NOW())",
+      [username, hash, display_name]
+    );
+
+    req.session.user = {
+      user_id: result.insertId,
+      username,
+      display_name,
+    };
+
+    res.redirect(`${BASE_PATH}/`);
+  } catch (err) {
+    console.error(err);
+    res.render("register", { error: "Server error." });
   }
-
-  const [existing] = await db.query(
-    "SELECT * FROM users WHERE username = ?",
-    [username]
-  );
-
-  if (existing.length) {
-    return res.render("register", { error: "Username already taken." });
-  }
-
-  const hash = await bcrypt.hash(password, 12);
-
-  const [result] = await db.query(
-    "INSERT INTO users (username, password_hash, display_name, created_at) VALUES (?, ?, ?, NOW())",
-    [username, hash, display_name]
-  );
-
-  req.session.user = {
-    user_id: result.insertId,
-    username,
-    display_name,
-  };
-
-  res.redirect(`${BASE_PATH}/`);
 });
 
 // Login
@@ -102,31 +115,36 @@ app.get(`${BASE_PATH}/login`, (req, res) => {
 });
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const [users] = await db.query(
-    "SELECT * FROM users WHERE username = ?",
-    [username]
-  );
+    const [users] = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
 
-  if (!users.length) {
-    return res.render("login", { error: "Invalid credentials." });
+    if (!users.length) {
+      return res.render("login", { error: "Invalid credentials." });
+    }
+
+    const user = users[0];
+    const ok = await bcrypt.compare(password, user.password_hash);
+
+    if (!ok) {
+      return res.render("login", { error: "Invalid credentials." });
+    }
+
+    req.session.user = {
+      user_id: user.user_id,
+      username: user.username,
+      display_name: user.display_name,
+    };
+
+    res.redirect(`${BASE_PATH}/`);
+  } catch (err) {
+    console.error(err);
+    res.render("login", { error: "Server error." });
   }
-
-  const user = users[0];
-  const ok = await bcrypt.compare(password, user.password_hash);
-
-  if (!ok) {
-    return res.render("login", { error: "Invalid credentials." });
-  }
-
-  req.session.user = {
-    user_id: user.user_id,
-    username: user.username,
-    display_name: user.display_name,
-  };
-
-  res.redirect(`${BASE_PATH}/`);
 });
 
 // Logout
@@ -136,24 +154,29 @@ app.get(`${BASE_PATH}/logout`, (req, res) => {
 
 // Recipes
 app.get(`${BASE_PATH}/recipes`, async (req, res) => {
-  const search = req.query.q || "";
+  try {
+    const search = req.query.q || "";
 
-  let recipes;
-  if (search) {
-    const like = `%${search}%`;
-    [recipes] = await db.query(
-      "SELECT * FROM recipes WHERE title LIKE ? OR summary LIKE ? OR main_tag LIKE ?",
-      [like, like, like]
-    );
-  } else {
-    [recipes] = await db.query("SELECT * FROM recipes");
+    let recipes;
+    if (search) {
+      const like = `%${search}%`;
+      [recipes] = await db.query(
+        "SELECT * FROM recipes WHERE title LIKE ? OR summary LIKE ? OR main_tag LIKE ?",
+        [like, like, like]
+      );
+    } else {
+      [recipes] = await db.query("SELECT * FROM recipes");
+    }
+
+    res.render("recipes", { recipes, search });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
   }
-
-  res.render("recipes", { recipes, search });
 });
 
-// ✅ IMPORTANT FIX: listen on all interfaces (IPv4 + IPv6) so Apache proxy can reach it
-app.listen(PORT, () => {
-  console.log(`Running on http://127.0.0.1:${PORT}${BASE_PATH}/`);
+// IMPORTANT: listen on ALL interfaces so doc.gold.ac.uk can reach it
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Running on http://0.0.0.0:${PORT}${BASE_PATH}/`);
 });
-
+EOF
