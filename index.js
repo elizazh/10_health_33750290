@@ -18,7 +18,7 @@ app.set("views", path.join(__dirname, "views"));
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ IMPORTANT: static files must also be served under the base path
+//  IMPORTANT: static files must also be served under the base path
 app.use(BASE_PATH, express.static(path.join(__dirname, "public")));
 
 app.use(
@@ -152,7 +152,7 @@ app.get(`${BASE_PATH}/recipes`, async (req, res) => {
   res.render("recipes", { recipes, search });
 });
 
-// ✅ Start server (MUST be 0.0.0.0 so Apache can reach it)
+// start server (MUST be 0.0.0.0 so Apache can reach it)
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Running on http://0.0.0.0:${PORT}${BASE_PATH}/`);
 });
