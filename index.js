@@ -18,7 +18,7 @@ app.set("views", path.join(__dirname, "views"));
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Static MUST be under BASE_PATH on Goldsmiths
+// ✅ Serve static assets UNDER the base path (so /usr/417/styles.css works)
 app.use(BASE_PATH, express.static(path.join(__dirname, "public")));
 
 // Sessions
@@ -30,29 +30,31 @@ app.use(
   })
 );
 
-// ✅ Globals for EJS links
+// Globals for EJS
 app.use((req, res, next) => {
-  res.locals.currentUser = req.session.user || null;
   res.locals.basePath = BASE_PATH;
+  res.locals.currentUser = req.session.user || null;
   next();
 });
 
-// ✅ Put ALL routes under BASE_PATH
+//  Put all routes on a router and mount it at BASE_PATH
 const router = express.Router();
 
 /* Home */
 router.get("/", async (req, res) => {
-  if (!req.session.user) return res.render("index", { logs: [] });
+  if (!req.session.user) {
+    return res.render("index", { logs: [] });
+  }
 
   try {
     const [logs] = await db.query(
       "SELECT * FROM daily_logs WHERE user_id = ? ORDER BY log_date DESC LIMIT 7",
       [req.session.user.user_id]
     );
-    res.render("index", { logs });
+    return res.render("index", { logs });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Database error");
+    return res.status(500).send("Database error");
   }
 });
 
@@ -64,6 +66,7 @@ router.get("/register", (req, res) => res.render("register", { error: null }));
 
 router.post("/register", async (req, res) => {
   const { username, display_name, password } = req.body;
+
   if (!username || !display_name || !password) {
     return res.render("register", { error: "All fields required." });
   }
@@ -80,4 +83,99 @@ router.post("/register", async (req, res) => {
     const hash = await bcrypt.hash(password, 12);
 
     const [result] = await db.query(
-      "INSERT INTO users (username, password_hash, display_name, created_at_
+      "INSERT INTO users (username, password_hash, display_name, created_at) VALUES (?, ?, ?, NOW())",
+      [username, hash, display_name]
+    );
+
+    req.session.user = {
+      user_id: result.insertId,
+      username,
+      display_name,
+    };
+
+    return res.redirect(`${BASE_PATH}/`);
+  } catch (err) {
+    console.error(err);
+    return res.render("register", { error: "Registration failed." });
+  }
+});
+
+/* Login */
+router.get("/login", (req, res) => res.render("login", { error: null }));
+
+router.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const [users] = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+
+    if (!users.length) {
+      return res.render("login", { error: "Invalid credentials." });
+    }
+
+    const user = users[0];
+    const ok = await bcrypt.compare(password, user.password_hash);
+
+    if (!ok) {
+      return res.render("login", { error: "Invalid credentials." });
+    }
+
+    req.session.user = {
+      user_id: user.user_id,
+      username: user.username,
+      display_name: user.display_name,
+    };
+
+    return res.redirect(`${BASE_PATH}/`);
+  } catch (err) {
+    console.error(err);
+    return res.render("login", { error: "Login failed." });
+  }
+});
+
+/* Logout */
+router.get("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect(`${BASE_PATH}/`));
+});
+
+/* Recipes */
+router.get("/recipes", async (req, res) => {
+  const search = req.query.q || "";
+
+  try {
+    let recipes;
+    if (search) {
+      const like = `%${search}%`;
+      [recipes] = await db.query(
+        "SELECT * FROM recipes WHERE title LIKE ? OR summary LIKE ? OR main_tag LIKE ?",
+        [like, like, like]
+      );
+    } else {
+      [recipes] = await db.query("SELECT * FROM recipes");
+    }
+
+    return res.render("recipes", { recipes, search });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Recipe error");
+  }
+});
+
+// mount router at /usr/417
+app.use(BASE_PATH, router);
+
+// Safety: show 404s clearly
+app.use((req, res) => res.status(404).send("Not found"));
+
+// Keep the service alive + log crashes
+process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
+process.on("uncaughtException", (err) => console.error("uncaughtException:", err));
+
+//  listen on IPv4 loopback (Apache proxy usually uses this)
+app.listen(PORT, "127.0.0.1", () => {
+  console.log(`PCOS Lifestyle Coach running on http://127.0.0.1:${PORT}${BASE_PATH}/`);
+});
+
