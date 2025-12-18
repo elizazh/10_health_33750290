@@ -1,3 +1,4 @@
+
 const BASE_PATH = "/usr/417";
 
 const express = require("express");
@@ -18,7 +19,7 @@ app.set("views", path.join(__dirname, "views"));
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Serve static assets UNDER the base path (so /usr/417/styles.css works)
+// Serve static assets UNDER the base path (so /usr/417/styles.css works)
 app.use(BASE_PATH, express.static(path.join(__dirname, "public")));
 
 // Sessions
@@ -37,7 +38,7 @@ app.use((req, res, next) => {
   next();
 });
 
-//  Put all routes on a router and mount it at BASE_PATH
+// Put all routes on a router and mount it at BASE_PATH
 const router = express.Router();
 
 /* Home */
@@ -72,10 +73,9 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    const [existing] = await db.query(
-      "SELECT * FROM users WHERE username = ?",
-      [username]
-    );
+    const [existing] = await db.query("SELECT * FROM users WHERE username = ?", [
+      username,
+    ]);
     if (existing.length) {
       return res.render("register", { error: "Username already taken." });
     }
@@ -107,10 +107,9 @@ router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const [users] = await db.query(
-      "SELECT * FROM users WHERE username = ?",
-      [username]
-    );
+    const [users] = await db.query("SELECT * FROM users WHERE username = ?", [
+      username,
+    ]);
 
     if (!users.length) {
       return res.render("login", { error: "Invalid credentials." });
@@ -147,6 +146,7 @@ router.get("/recipes", async (req, res) => {
 
   try {
     let recipes;
+
     if (search) {
       const like = `%${search}%`;
       [recipes] = await db.query(
@@ -167,16 +167,18 @@ router.get("/recipes", async (req, res) => {
 // mount router at /usr/417
 app.use(BASE_PATH, router);
 
-// Safety: show 404s clearly
+// Safety: show 404s clearly (keep AFTER mounting routes)
 app.use((req, res) => res.status(404).send("Not found"));
 
-// Keep the service alive + log crashes
-process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
-process.on("uncaughtException", (err) => console.error("uncaughtException:", err));
+// Log crashes (optional)
+process.on("unhandledRejection", (err) =>
+  console.error("unhandledRejection:", err)
+);
+process.on("uncaughtException", (err) =>
+  console.error("uncaughtException:", err)
+);
 
-//  listen on IPv4 loopback (Apache proxy usually uses this)
-app.listen(8000, "::", () => {
-  console.log("Listening on [::]:8000");
+// IMPORTANT: bind to IPv4 all interfaces (works for both proxy + localhost)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Listening on http://0.0.0.0:${PORT}${BASE_PATH}/`);
 });
-
-
